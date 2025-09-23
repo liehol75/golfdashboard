@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Golfturnier Dashboard</title>
+<style>
+body{font-family:"Segoe UI",Arial,sans-serif;margin:0;background:#f5f5f5;color:#222;}
+header{background:#0077b6;color:#fff;padding:12px 16px;font-size:20px;font-weight:600;}
+.container{max-width:1000px;margin:16px auto;padding:12px;}
+.card{background:#fff;padding:16px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.06);margin-bottom:16px;}
+label{display:block;margin-top:8px;font-weight:600;}
+input,select{padding:6px;border-radius:6px;border:1px solid #ccc;width:100%;box-sizing:border-box;}
+button{padding:8px 12px;border:none;border-radius:6px;background:#00b4d8;color:#fff;cursor:pointer;margin-top:8px;}
+button:hover{opacity:0.9;}
+table{width:100%;border-collapse:collapse;margin-top:12px;}
+th,td{border:1px solid #ccc;padding:6px;text-align:center;}
+th{background:#e0f7ff;}
+.small{font-size:12px;color:#666;}
+</style>
+</head>
+<body>
+<header>Golfturnier Dashboard</header>
+<div class="container">
+
+  <!-- Golfplatz anlegen -->
+  <div class="card" id="addCourseCard">
+    <h3>Neuen Golfplatz anlegen</h3>
+    <label>Platzname</label>
+    <input type="text" id="courseName">
+    
+    <label>Anzahl Löcher</label>
+    <select id="holeCount">
+      <option value="9">9</option>
+      <option value="18" selected>18</option>
+    </select>
+    
+    <label>Course Rating</label>
+    <input type="number" step="0.1" id="courseRating" placeholder="z.B. 72.5">
+    
+    <label>Slope</label>
+    <input type="number" step="1" id="courseSlope" placeholder="z.B. 128">
+
+    <div id="holesContainer"></div>
+    
+    <button onclick="addCourse()">Platz speichern</button>
+  </div>
+
+  <!-- Vorhandene Plätze -->
+  <div class="card">
+    <h3>Gespeicherte Plätze</h3>
+    <select id="coursesDropdown">
+      <option value="">-- Platz auswählen --</option>
+    </select>
+    <table id="coursesTable">
+      <thead>
+        <tr>
+          <th>#</th><th>Name</th><th>Löcher</th><th>Course Rating</th><th>Slope</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Turnier anlegen -->
+  <div class="card">
+    <h3>Turnier anlegen</h3>
+    <label>Turniername</label>
+    <input type="text" id="tournamentName">
+    <label>Platz auswählen</label>
+    <select id="tournamentCourse">
+      <option value="">-- Platz wählen --</option>
+    </select>
+    <label>Datum</label>
+    <input type="date" id="tournamentDate">
+    <label>18-Loch oder 9-Loch</label>
+    <select id="tournamentHoles">
+      <option value="9">9</option>
+      <option value="18" selected>18</option>
+    </select>
+    <button onclick="addTournament()">Turnier speichern</button>
+  </div>
+
+</div>
+
+<script>
+// Speicherung Keys
+const STORAGE_COURSES = 'golfCourses';
+const STORAGE_TOURNAMENTS = 'golfTournaments';
+
+let courses = [];
+let tournaments = [];
+
+// Löcher dynamisch erzeugen
+const holesContainer = document.getElementById('holesContainer');
+document.getElementById('holeCount').addEventListener('change', generateHoleInputs);
+function generateHoleInputs(){
+  const count = parseInt(document.getElementById('holeCount').value);
+  holesContainer.innerHTML = '';
+  for(let i=1;i<=count;i++){
+    holesContainer.innerHTML += `<label>Loch ${i} - Par:</label>
+    <input type="number" step="1" class="holePar" placeholder="Par">
+    <label>HCP:</label>
+    <input type="number" step="1" class="holeHcp" placeholder="HCP">`;
+  }
+}
+
+// Daten laden
+function loadData(){
+  courses = JSON.parse(localStorage.getItem(STORAGE_COURSES)||'[]');
+  tournaments = JSON.parse(localStorage.getItem(STORAGE_TOURNAMENTS)||'[]');
+  renderCourses();
+}
+  <script>
+// ===========================
+// Load / Save Data
+// ===========================
+const STORAGE_KEY_GOLF = "golf_dashboard_data";
+let golfData = null;
+
+function loadGolfData() {
+  const raw = localStorage.getItem(STORAGE_KEY_GOLF);
+  if (!raw) {
+    golfData = { courses: [], tournaments: [] };
+    saveGolfData();
+    return;
+  }
+  try {
+    golfData = JSON.parse(raw);
+  } catch (e) {
+    console.error("Fehler beim Laden, neue Daten angelegt", e);
+    golfData = { courses: [], tournaments: [] };
+    saveGolfData();
+  }
+}
+
+function saveGolfData() {
+  localStorage.setItem(STORAGE_KEY_GOLF, JSON.stringify(golfData));
+  renderCourses();
+  renderTournaments();
+}
+
+// ===========================
+// Course Management
+// ===========================
+function addCourse() {
+  const name = document.getElementById("courseName").value.trim();
+  const holes = parseInt(document.getElementById("courseHoles").value, 10);
+  const rating = parseFloat(document.getElementById("courseRating").value);
+  const slope = parseFloat(document.getElementById("courseSlope").value);
+  if (!name || isNaN(holes) || isNaN(rating) || isNaN(slope)) {
+    alert("Bitte alle Felder korrekt ausfüllen.");
+    return;
+  }
+
+  const holesData = [];
+  for (let i = 0; i < holes; i++) {
+    const par = parseInt(prompt(`Par für Bahn ${i + 1}`), 10);
+    const hcp = parseInt(prompt(`HCP für Bahn ${i + 1}`), 10);
+    if (isNaN(par) || isNaN(hcp)) {
+      alert("Ungültige Eingabe. Abbruch.");
+      return;
+    }
+    holesData.push({ par, hcp });
+  }
+
+  golfData.courses.push({
+    name,
+    holes,
+    rating,
+    slope,
+    holesData
+  });
+
+  saveGolfData();
+  document.getElementById("courseName").value = "";
+  document.getElementById("courseHoles").value = "18";
+  document.getElementById("courseRating").value = "";
+  document.getElementById("courseSlope").value = "";
+}
+
+function renderCourses() {
+  const select = document.getElementById("tournamentCourse");
+  select.innerHTML = "";
+  golfData.courses.forEach((c, idx) => {
+    const opt = document.createElement("option");
+    opt.value = idx;
+    opt.textContent = c.name;
+    select.appendChild(opt);
+  });
+}
+
+// ===========================
+// Tournament Management
+// ===========================
+function addTournament() {
+  const courseIdx = parseInt(document.getElementById("tournamentCourse").value, 10);
+  const date = document.getElementById("tournamentDate").value;
+  const type = document.getElementById("tournamentType").value;
+  if (isNaN(courseIdx) || !date || !type) {
+    alert("Bitte Turnier-Daten korrekt eingeben.");
+    return;
+  }
+
+  const course = golfData.courses[courseIdx];
+  const scores = [];
+  for (let i = 0; i < course.holes; i++) {
+    const s = parseInt(prompt(`Schlagzahl für Bahn ${i + 1} (Par ${course.holesData[i].par})`), 10);
+    if (isNaN(s)) {
+      alert("Ungültige Eingabe. Abbruch.");
+      return;
+    }
+    scores.push(s);
+  }
+
+  golfData.tournaments.push({
+    date,
+    type,
+    courseIdx,
+    scores
+  });
+
+  saveGolfData();
+  document.getElementById("tournamentDate").value = "";
+}
+
+function renderTournaments() {
+  const tbody = document.getElementById("tournamentList");
+  tbody.innerHTML = "";
+  golfData.tournaments.forEach((t, idx) => {
+    const tr = document.createElement("tr");
+    const course = golfData.courses[t.courseIdx];
+    tr.innerHTML = `<td>${t.date}</td><td>${course.name}</td><td>${t.type}</td><td>${t.scores.join(", ")}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ===========================
+// Initial Load
+// ===========================
+loadGolfData();
+</script>
+</body>
+</html>
