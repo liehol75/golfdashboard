@@ -6,16 +6,73 @@
 <title>Golf-Verwaltung</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-body{font-family:'Inter',sans-serif;background:#0f1724;color:#eee;margin:0}
-.container{max-width:1250px;margin:auto;padding:20px}
-h1{margin:0 0 15px;font-size:28px;font-weight:600}
-.card{background:#1b2637;padding:20px;border-radius:12px;margin-bottom:25px;box-shadow:0 0 10px rgba(0,0,0,0.3)}
-label{display:block;margin-top:8px}
-select,input,button{width:100%;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:#243447;color:#eee;margin-top:4px}
-button{cursor:pointer;margin-top:10px}
-table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
-th,td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.1);text-align:center}
+body{
+  font-family:'Inter',sans-serif;
+  background:#0f1724;
+  color:#eee;
+  margin:0;
+}
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
+h1{
+  margin:0 0 20px;
+  font-size:28px;
+  font-weight:600;
+}
+.card{
+  background:#1b2637;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:25px;
+  box-shadow:0 0 10px rgba(0,0,0,0.3);
+}
+label{
+  display:block;
+  margin-top:12px;
+  font-size:13px;
+  color:#cbd5e1;
+}
+input,select,button{
+  width:100%;
+  padding:10px 12px;
+  border-radius:6px;
+  border:1px solid rgba(255,255,255,0.1);
+  background:#243447;
+  color:#eee;
+  font-size:14px;
+  margin-top:4px;
+  box-sizing:border-box;
+}
+button{
+  cursor:pointer;
+  margin-top:15px;
+  background:#60a5fa;
+  color:#0f1724;
+  font-weight:600;
+  border:none;
+  transition:background .2s;
+}
+button:hover{background:#3b82f6}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+  margin-top:15px;
+}
+th,td{
+  padding:6px 8px;
+  border-bottom:1px solid rgba(255,255,255,0.1);
+  text-align:center;
+}
 a{color:#60a5fa;text-decoration:none}
+.section-title{
+  font-size:20px;
+  font-weight:600;
+  margin-bottom:10px;
+}
 </style>
 </head>
 <body>
@@ -24,11 +81,11 @@ a{color:#60a5fa;text-decoration:none}
 <p><a href="index.html">⬅️ zurück zum Dashboard</a></p>
 
 <div class="card">
-<h2>Plätze verwalten</h2>
+<div class="section-title">Platz anlegen</div>
 <form id="courseForm">
-<label>Name</label>
+<label for="cName">Platzname</label>
 <input id="cName" required>
-<label>Tee-Farbe</label>
+<label for="cColor">Tee-Farbe</label>
 <select id="cColor">
 <option value="#ffffff">Weiß</option>
 <option value="#ffff00">Gelb</option>
@@ -36,33 +93,33 @@ a{color:#60a5fa;text-decoration:none}
 <option value="#ff0000">Rot</option>
 <option value="#00ff00">Grün</option>
 </select>
-<label>Slope</label>
+<label for="cSlope">Slope</label>
 <input id="cSlope" type="number" required>
-<label>Course Rating</label>
+<label for="cCR">Course Rating</label>
 <input id="cCR" type="number" required>
 <button type="button" onclick="showHoleInputs()">Löcher definieren</button>
-<button type="submit">Platz anlegen</button>
+<button type="submit">Platz speichern</button>
 </form>
 <div id="holesForm"></div>
 <div id="courseList"></div>
 </div>
 
 <div class="card">
-<h2>Turnier anlegen</h2>
+<div class="section-title">Turnier anlegen</div>
 <form id="tournamentForm">
-<label>Datum</label>
+<label for="tDate">Datum</label>
 <input type="date" id="tDate" required>
-<label>Name</label>
+<label for="tName">Turniername</label>
 <input id="tName" required>
-<label>Club</label>
+<label for="tClub">Club</label>
 <input id="tClub" required>
-<label>Platz</label>
+<label for="tCourse">Platz</label>
 <select id="tCourse"></select>
-<label>HandicapIndex</label>
+<label for="tHcp">Handicap Index</label>
 <input type="number" id="tHcp">
-<label>Spielform</label>
+<label for="tFormat">Spielform</label>
 <select id="tFormat"><option>Stroke</option><option>Stableford</option></select>
-<button type="submit">Turnier anlegen</button>
+<button type="submit">Turnier speichern</button>
 </form>
 <div id="holeEntry"></div>
 </div>
@@ -78,7 +135,7 @@ function uid(p='id'){return p+Math.random().toString(36).slice(2,9)}
 function showHoleInputs(){
  let html='<table><tr><th>Loch</th><th>Par</th><th>HCP</th></tr>';
  for(let i=1;i<=18;i++){
- html+=`<tr><td>${i}</td><td><input type="number" id="par${i}" value="4" style="width:50px"></td><td><input type="number" id="hcp${i}" value="${i}" style="width:50px"></td></tr>`;
+ html+=`<tr><td>${i}</td><td><input type="number" id="par${i}" value="4" style="width:60px"></td><td><input type="number" id="hcp${i}" value="${i}" style="width:60px"></td></tr>`;
  }
  html+='</table>';
  document.getElementById('holesForm').innerHTML=html;
@@ -98,12 +155,12 @@ document.getElementById('courseForm').addEventListener('submit',e=>{
 
 function renderCourses(){
  let html='';
- state.courses.forEach(c=>{html+=`<div><strong>${c.name}</strong> (Slope ${c.slope}, CR ${c.courseRating})</div>`});
+ state.courses.forEach(c=>{html+=`<div style="margin-top:6px"><strong>${c.name}</strong> (Slope ${c.slope}, CR ${c.courseRating})</div>`});
  document.getElementById('courseList').innerHTML=html;
 }
 
 function populateCourseDropdowns(){
- document.getElementById('tCourse').innerHTML='<option value="">-- Platz --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+ document.getElementById('tCourse').innerHTML='<option value="">-- Platz wählen --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
 }
 
 document.getElementById('tournamentForm').addEventListener('submit',e=>{
@@ -116,11 +173,11 @@ document.getElementById('tournamentForm').addEventListener('submit',e=>{
 
 function renderHoleEntry(t){
  const div=document.getElementById('holeEntry');
- let html=`<h3>Löcher für ${t.name}</h3><table><tr><th>Loch</th><th>Par</th><th>HCP</th><th>Strokes</th><th>Streichen</th></tr>`;
+ let html=`<h3 style="margin-top:20px">Löcher für ${t.name}</h3><table><tr><th>Loch</th><th>Par</th><th>HCP</th><th>Strokes</th><th>Streichen</th></tr>`;
  t.holes.forEach(h=>{
  html+=`<tr>
  <td>${h.num}</td><td>${h.par}</td><td>${h.hcp}</td>
- <td><input type="number" value="${h.strokes}" style="width:50px" onchange="updateHole('${t.id}',${h.num},this.value)"></td>
+ <td><input type="number" value="${h.strokes}" style="width:60px" onchange="updateHole('${t.id}',${h.num},this.value)"></td>
  <td><input type="checkbox" ${h.stroked?'checked':''} onchange="toggleStroke('${t.id}',${h.num},this.checked)"></td>
  </tr>`;
  });
