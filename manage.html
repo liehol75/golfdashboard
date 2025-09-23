@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Golf-Verwaltung</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Inter',sans-serif;background:#0f1724;color:#eee;margin:0}
+.container{max-width:1250px;margin:auto;padding:20px}
+h1{margin:0 0 10px;font-size:24px}
+.card{background:rgba(255,255,255,0.03);padding:16px;border-radius:10px;margin-bottom:20px}
+select,input,button{padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:#1b2637;color:#eee;margin:2px}
+button{cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,0.05);text-align:center}
+a{color:#60a5fa;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Verwaltung</h1>
+<p><a href="index.html">⬅️ zurück zum Dashboard</a></p>
+
+<div class="card">
+<h2>Plätze verwalten</h2>
+<form id="courseForm">
+Name <input id="cName" required>
+Tee-Farbe 
+<select id="cColor">
+<option value="#ffffff">Weiß</option>
+<option value="#ffff00">Gelb</option>
+<option value="#1e90ff">Blau</option>
+<option value="#ff0000">Rot</option>
+<option value="#00ff00">Grün</option>
+</select>
+Slope <input id="cSlope" type="number" required style="width:80px">
+Course Rating <input id="cCR" type="number" required style="width:80px">
+<button type="button" onclick="showHoleInputs()">Löcher definieren</button>
+<button type="submit">Platz anlegen</button>
+</form>
+<div id="holesForm"></div>
+<div id="courseList"></div>
+</div>
+
+<div class="card">
+<h2>Turnier anlegen</h2>
+<form id="tournamentForm">
+Datum <input type="date" id="tDate" required>
+Name <input id="tName" required>
+Club <input id="tClub" required>
+Platz <select id="tCourse"></select>
+HandicapIndex <input type="number" id="tHcp" style="width:80px">
+Spielform <select id="tFormat"><option>Stroke</option><option>Stableford</option></select>
+<button type="submit">Turnier anlegen</button>
+</form>
+<div id="holeEntry"></div>
+</div>
+</div>
+
+<script>
+const STORAGE_KEY='golf_dash_full3';
+let state={courses:[],tournaments:[]};
+if(localStorage.getItem(STORAGE_KEY))state=JSON.parse(localStorage.getItem(STORAGE_KEY));
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+function uid(p='id'){return p+Math.random().toString(36).slice(2,9)}
+function showHoleInputs(){
+ let html='<table><tr><th>Loch</th><th>Par</th><th>HCP</th></tr>';
+ for(let i=1;i<=18;i++){
+ html+=`<tr><td>${i}</td><td><input type="number" id="par${i}" value="4" style="width:50px"></td><td><input type="number" id="hcp${i}" value="${i}" style="width:50px"></td></tr>`;
+ }
+ html+='</table>';
+ document.getElementById('holesForm').innerHTML=html;
+}
+document.getElementById('courseForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const holes=[];
+ for(let i=1;i<=18;i++){
+ holes.push({num:i,par:+document.getElementById('par'+i).value,hcp:+document.getElementById('hcp'+i).value});
+ }
+ const c={id:uid('c'),name:cName.value,teeColor:cColor.value,slope:+cSlope.value,courseRating:+cCR.value,
+ holes:holes,par:holes.reduce((s,h)=>s+h.par,0)};
+ state.courses.push(c);save();renderCourses();populateCourseDropdowns();
+ cName.value='';document.getElementById('holesForm').innerHTML='';
+});
+function renderCourses(){
+ let html='';
+ state.courses.forEach(c=>{html+=`<div><strong>${c.name}</strong> (Slope ${c.slope}, CR ${c.courseRating})</div>`});
+ document.getElementById('courseList').innerHTML=html;
+}
+function populateCourseDropdowns(){
+ document.getElementById('tCourse').innerHTML='<option value="">-- Platz --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+}
+document.getElementById('tournamentForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const cid=tCourse.value;const c=state.courses.find(x=>x.id===cid);if(!c)return alert('Platz wählen');
+ const t={id:uid('t'),name:tName.value,club:tClub.value,date:tDate.value,courseId:cid,handicapIndex:+tHcp.value,format:tFormat.value,
+ holes:c.holes.map(h=>({num:h.num,par:h.par,hcp:h.hcp,strokes:h.par,stroked:false}))};
+ state.tournaments.push(t);save();renderHoleEntry(t);
+});
+function renderHoleEntry(t){
+ const div=document.getElementById('holeEntry');
+ let html=`<h3>Löcher für ${t.name}</h3><table><tr><th>Loch</th><th>Par</th><th>HCP</th><th>Strokes</th><th>Streichen</th></tr>`;
+ t.holes.forEach(h=>{
+ html+=`<tr>
+ <td>${h.num}</td><td>${h.par}</td><td>${h.hcp}</td>
+ <td><input type="number" value="${h.strokes}" style="width:50px" onchange="updateHole('${t.id}',${h.num},this.value)"></td>
+ <td><input type="checkbox" ${h.stroked?'checked':''} onchange="toggleStroke('${t.id}',${h.num},this.checked)"></td>
+ </tr>`;
+ });
+ html+='</table>';
+ div.innerHTML=html;
+}
+function updateHole(tid,num,val){
+ const t=state.tournaments.find(x=>x.id===tid);const h=t.holes.find(x=>x.num===num);h.strokes=+val;save();
+}
+function toggleStroke(tid,num,checked){
+ const t=state.tournaments.find(x=>x.id===tid);const h=t.holes.find(x=>x.num===num);h.stroked=checked;save();
+}
+renderCourses();populateCourseDropdowns();
+</script>
+</body>
+</html>
