@@ -17,39 +17,13 @@ button{cursor:pointer}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th,td{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,0.05);text-align:center}
 .eagle{background:#4ade80}.birdie{background:#22d3ee}.par{background:#60a5fa}.bogey{background:#facc15}.dbl{background:#f87171}
+a{color:#60a5fa;text-decoration:none}
 </style>
 </head>
 <body>
 <div class="container">
-<h1>Golf-Turnier-Dashboard</h1>
-
-<div class="card">
-<h2>Plätze verwalten</h2>
-<form id="courseForm">
-Name <input id="cName" required>
-Tee-Farbe <input id="cColor" type="color" value="#0066cc">
-Slope <input id="cSlope" type="number" required style="width:80px">
-Course Rating <input id="cCR" type="number" required style="width:80px">
-<button type="button" onclick="showHoleInputs()">Löcher definieren</button>
-<button type="submit">Platz anlegen</button>
-</form>
-<div id="holesForm"></div>
-<div id="courseList"></div>
-</div>
-
-<div class="card">
-<h2>Turnier anlegen</h2>
-<form id="tournamentForm">
-Datum <input type="date" id="tDate" required>
-Name <input id="tName" required>
-Club <input id="tClub" required>
-Platz <select id="tCourse"></select>
-HandicapIndex <input type="number" id="tHcp" style="width:80px">
-Spielform <select id="tFormat"><option>Stroke</option><option>Stableford</option></select>
-<button type="submit">Turnier anlegen</button>
-</form>
-<div id="holeEntry"></div>
-</div>
+<h1>Golf-Dashboard</h1>
+<p><a href="manage.html">➕ Plätze & Turniere anlegen</a></p>
 
 <div class="card">
 <h2>Übersicht</h2>
@@ -78,11 +52,10 @@ Spielform <select id="tFormat"><option>Stroke</option><option>Stableford</option
 </div>
 
 <script>
-const STORAGE_KEY='golf_dash_full2';
+const STORAGE_KEY='golf_dash_full3';
 let state={courses:[],tournaments:[]};
 if(localStorage.getItem(STORAGE_KEY))state=JSON.parse(localStorage.getItem(STORAGE_KEY));
 function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
-function uid(p='id'){return p+Math.random().toString(36).slice(2,9)}
 function fmtDate(d){return new Date(d).toLocaleDateString('de-DE')}
 function classify(par,strokes){
  if(!strokes||strokes<=0)return'';
@@ -93,69 +66,6 @@ function classify(par,strokes){
  if(diff==1)return'bogey';
  return'dbl';
 }
-
-/* Hole inputs for new course */
-function showHoleInputs(){
- let html='<table><tr><th>Loch</th><th>Par</th><th>HCP</th></tr>';
- for(let i=1;i<=18;i++){
- html+=`<tr><td>${i}</td><td><input type="number" id="par${i}" value="4" style="width:50px"></td><td><input type="number" id="hcp${i}" value="${i}" style="width:50px"></td></tr>`;
- }
- html+='</table>';
- document.getElementById('holesForm').innerHTML=html;
-}
-
-/* Course create */
-document.getElementById('courseForm').addEventListener('submit',e=>{
- e.preventDefault();
- const holes=[];
- for(let i=1;i<=18;i++){
- holes.push({num:i,par:+document.getElementById('par'+i).value,hcp:+document.getElementById('hcp'+i).value});
- }
- const c={id:uid('c'),name:cName.value,teeColor:cColor.value,slope:+cSlope.value,courseRating:+cCR.value,
- holes:holes,par:holes.reduce((s,h)=>s+h.par,0)};
- state.courses.push(c);save();renderCourses();populateCourseDropdowns();
- cName.value='';document.getElementById('holesForm').innerHTML='';
-});
-function renderCourses(){
- let html='';
- state.courses.forEach(c=>{html+=`<div><strong>${c.name}</strong> (Slope ${c.slope}, CR ${c.courseRating})</div>`});
- document.getElementById('courseList').innerHTML=html;
-}
-function populateCourseDropdowns(){
- document.getElementById('tCourse').innerHTML='<option value="">-- Platz --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
- document.getElementById('bestCourse').innerHTML='<option value="">-- Platz --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-}
-
-/* Tournament create */
-document.getElementById('tournamentForm').addEventListener('submit',e=>{
- e.preventDefault();
- const cid=tCourse.value;const c=state.courses.find(x=>x.id===cid);if(!c)return alert('Platz wählen');
- const t={id:uid('t'),name:tName.value,club:tClub.value,date:tDate.value,courseId:cid,handicapIndex:+tHcp.value,format:tFormat.value,
- holes:c.holes.map(h=>({num:h.num,par:h.par,hcp:h.hcp,strokes:h.par,stroked:false}))};
- state.tournaments.push(t);save();
- renderHoleEntry(t);renderAll();
-});
-function renderHoleEntry(t){
- const div=document.getElementById('holeEntry');
- let html=`<h3>Löcher für ${t.name}</h3><table><tr><th>Loch</th><th>Par</th><th>HCP</th><th>Strokes</th><th>Streichen</th></tr>`;
- t.holes.forEach(h=>{
- html+=`<tr>
- <td>${h.num}</td><td>${h.par}</td><td>${h.hcp}</td>
- <td><input type="number" value="${h.strokes}" style="width:50px" onchange="updateHole('${t.id}',${h.num},this.value)"></td>
- <td><input type="checkbox" ${h.stroked?'checked':''} onchange="toggleStroke('${t.id}',${h.num},this.checked)"></td>
- </tr>`;
- });
- html+='</table>';
- div.innerHTML=html;
-}
-function updateHole(tid,num,val){
- const t=state.tournaments.find(x=>x.id===tid);const h=t.holes.find(x=>x.num===num);h.strokes=+val;save();renderAll();
-}
-function toggleStroke(tid,num,checked){
- const t=state.tournaments.find(x=>x.id===tid);const h=t.holes.find(x=>x.num===num);h.stroked=checked;save();renderAll();
-}
-
-/* Summary + Chart */
 let currentYear='';let chartScores;
 function applyFilters(){currentYear=document.getElementById('filterYear').value;renderAll()}
 function resetFilters(){currentYear='';renderAll()}
@@ -168,8 +78,6 @@ function renderSummaryAndChart(){
  if(chartScores)chartScores.destroy();
  chartScores=new Chart(document.getElementById('chartScores'),{type:'line',data:{labels,datasets:[{label:'Score',data:scores}]},options:{plugins:{legend:{display:false}}}});
 }
-
-/* Birdies */
 function renderBirdies(){
  const div=document.getElementById('birdieList');div.innerHTML='';
  const birdies=[];
@@ -181,8 +89,6 @@ function renderBirdies(){
  if(!birdies.length){div.textContent='Keine Birdies';return}
  div.innerHTML='<table><tr><th>Datum</th><th>Platz</th><th>Loch</th></tr>'+birdies.map(b=>`<tr><td>${fmtDate(b.date)}</td><td>${b.course}</td><td>${b.hole}</td></tr>`).join('')+'</table>';
 }
-
-/* Best-of-Hole */
 function renderBestOfHole(){
  const id=document.getElementById('bestCourse').value;const c=state.courses.find(x=>x.id===id);
  if(!c){document.getElementById('bestTable').innerHTML='';return}
@@ -195,8 +101,6 @@ function renderBestOfHole(){
  c.holes.forEach((h,i)=>{const sc=best[i];const cls=sc?classify(h.par,sc):'';html+=`<tr><td>${h.num}</td><td>${h.par}</td><td class="${cls}">${sc?sc:'-'}</td></tr>`});
  html+='</table>';document.getElementById('bestTable').innerHTML=html;
 }
-
-/* Recent list */
 function renderRecentList(){
  const div=document.getElementById('recentList');div.innerHTML='';
  const list=state.tournaments.filter(t=>!currentYear||new Date(t.date).getFullYear().toString()==currentYear).slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,10);
@@ -207,16 +111,12 @@ function renderRecentList(){
  html+='</tr></table></div>';div.innerHTML+=html;
  });
 }
-
-/* Filters populate */
 function populateFilters(){
  const years=Array.from(new Set(state.tournaments.map(t=>new Date(t.date).getFullYear()))).sort((a,b)=>b-a);
  document.getElementById('filterYear').innerHTML='<option value="">Alle Jahre</option>'+years.map(y=>`<option>${y}</option>`).join('');
- populateCourseDropdowns();
+ document.getElementById('bestCourse').innerHTML='<option value="">-- Platz --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
 }
-
-/* Render all */
-function renderAll(){populateFilters();renderCourses();renderSummaryAndChart();renderBirdies();renderRecentList();renderBestOfHole();}
+function renderAll(){populateFilters();renderSummaryAndChart();renderBirdies();renderRecentList();renderBestOfHole();}
 renderAll();
 </script>
 </body>
