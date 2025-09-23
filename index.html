@@ -9,29 +9,35 @@
 <style>
 body{font-family:'Inter',sans-serif;background:#0f1724;color:#eee;margin:0}
 .container{max-width:1250px;margin:auto;padding:20px}
-h1{margin:0 0 10px;font-size:24px}
-h2{margin-top:0}
-.card{background:rgba(255,255,255,0.03);padding:16px;border-radius:10px;margin-bottom:20px}
-select,input,button{padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:#1b2637;color:#eee;margin:2px}
+h1{margin:0 0 15px;font-size:28px;font-weight:600}
+h2{margin:0 0 10px;font-size:20px}
+.card{background:#1b2637;padding:20px;border-radius:12px;margin-bottom:25px;box-shadow:0 0 10px rgba(0,0,0,0.3)}
+select,input,button{padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:#243447;color:#eee;margin:4px 0}
 button{cursor:pointer}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,0.05);text-align:center}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.1);text-align:center}
 .eagle{background:#4ade80}.birdie{background:#22d3ee}.par{background:#60a5fa}.bogey{background:#facc15}.dbl{background:#f87171}
 a{color:#60a5fa;text-decoration:none}
 </style>
 </head>
 <body>
 <div class="container">
-<h1>Golf-Dashboard</h1>
+<h1>🏌️ Golf-Dashboard</h1>
 <p><a href="manage.html">➕ Plätze & Turniere anlegen</a></p>
 
 <div class="card">
 <h2>Übersicht</h2>
+<label for="filterYear">Jahr filtern:</label>
 <select id="filterYear"></select>
 <button onclick="applyFilters()">Anwenden</button>
 <button onclick="resetFilters()">Reset</button>
 <div id="summary"></div>
 <canvas id="chartScores" height="100"></canvas>
+</div>
+
+<div class="card">
+<h2>Top 10 Runden</h2>
+<div id="topRounds"></div>
 </div>
 
 <div class="card">
@@ -46,13 +52,13 @@ a{color:#60a5fa;text-decoration:none}
 </div>
 
 <div class="card">
-<h2>Turniere (letzte)</h2>
+<h2>Letzte Turniere</h2>
 <div id="recentList"></div>
 </div>
 </div>
 
 <script>
-const STORAGE_KEY='golf_dash_full3';
+const STORAGE_KEY='golf_dash_full4';
 let state={courses:[],tournaments:[]};
 if(localStorage.getItem(STORAGE_KEY))state=JSON.parse(localStorage.getItem(STORAGE_KEY));
 function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
@@ -70,14 +76,26 @@ let currentYear='';let chartScores;
 function applyFilters(){currentYear=document.getElementById('filterYear').value;renderAll()}
 function resetFilters(){currentYear='';renderAll()}
 function sumAdjGross(t){return t.holes.reduce((s,h)=>s+(h.strokes||0),0)}
+
 function renderSummaryAndChart(){
  const data=state.tournaments.filter(t=>!currentYear||new Date(t.date).getFullYear().toString()==currentYear);
  const total=data.length;const n18=data.filter(t=>t.holes.length>=18).length;const n9=data.filter(t=>t.holes.length<18).length;
- document.getElementById('summary').innerHTML=`<p>Gesamt: ${total} | 18-Loch: ${n18} | 9-Loch: ${n9}</p>`;
+ document.getElementById('summary').innerHTML=`<p><strong>Gesamt:</strong> ${total} | <strong>18-Loch:</strong> ${n18} | <strong>9-Loch:</strong> ${n9}</p>`;
  const labels=data.map(t=>fmtDate(t.date));const scores=data.map(t=>sumAdjGross(t));
  if(chartScores)chartScores.destroy();
- chartScores=new Chart(document.getElementById('chartScores'),{type:'line',data:{labels,datasets:[{label:'Score',data:scores}]},options:{plugins:{legend:{display:false}}}});
+ chartScores=new Chart(document.getElementById('chartScores'),{type:'line',data:{labels,datasets:[{label:'Score',data:scores,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.3)',fill:true}]},options:{plugins:{legend:{display:false}}}});
 }
+
+function renderTopRounds(){
+ const div=document.getElementById('topRounds');
+ const rounds=state.tournaments.filter(t=>!currentYear||new Date(t.date).getFullYear().toString()==currentYear)
+   .map(t=>({date:t.date,score:sumAdjGross(t),name:t.name,course:state.courses.find(c=>c.id===t.courseId)?.name||'?'}))
+   .sort((a,b)=>a.score-b.score).slice(0,10);
+ if(!rounds.length){div.textContent='Keine Runden';return}
+ div.innerHTML='<table><tr><th>Datum</th><th>Turnier</th><th>Platz</th><th>Score</th></tr>'+
+ rounds.map(r=>`<tr><td>${fmtDate(r.date)}</td><td>${r.name}</td><td>${r.course}</td><td>${r.score}</td></tr>`).join('')+'</table>';
+}
+
 function renderBirdies(){
  const div=document.getElementById('birdieList');div.innerHTML='';
  const birdies=[];
@@ -89,6 +107,7 @@ function renderBirdies(){
  if(!birdies.length){div.textContent='Keine Birdies';return}
  div.innerHTML='<table><tr><th>Datum</th><th>Platz</th><th>Loch</th></tr>'+birdies.map(b=>`<tr><td>${fmtDate(b.date)}</td><td>${b.course}</td><td>${b.hole}</td></tr>`).join('')+'</table>';
 }
+
 function renderBestOfHole(){
  const id=document.getElementById('bestCourse').value;const c=state.courses.find(x=>x.id===id);
  if(!c){document.getElementById('bestTable').innerHTML='';return}
@@ -101,22 +120,26 @@ function renderBestOfHole(){
  c.holes.forEach((h,i)=>{const sc=best[i];const cls=sc?classify(h.par,sc):'';html+=`<tr><td>${h.num}</td><td>${h.par}</td><td class="${cls}">${sc?sc:'-'}</td></tr>`});
  html+='</table>';document.getElementById('bestTable').innerHTML=html;
 }
+
 function renderRecentList(){
  const div=document.getElementById('recentList');div.innerHTML='';
- const list=state.tournaments.filter(t=>!currentYear||new Date(t.date).getFullYear().toString()==currentYear).slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,10);
+ const list=state.tournaments.filter(t=>!currentYear||new Date(t.date).getFullYear().toString()==currentYear)
+ .slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,10);
  list.forEach(t=>{
  const c=state.courses.find(x=>x.id===t.courseId);
- let html=`<div style="margin-bottom:8px"><strong>${t.name}</strong> (${fmtDate(t.date)}) ${c?c.name:''}<br><table><tr>`;
+ let html=`<div style="margin-bottom:12px"><strong>${t.name}</strong> (${fmtDate(t.date)}) ${c?c.name:''}<br><table><tr>`;
  t.holes.forEach(h=>{const cls=classify(h.par,h.strokes);html+=`<td class="${cls}">${h.strokes}</td>`});
  html+='</tr></table></div>';div.innerHTML+=html;
  });
 }
+
 function populateFilters(){
  const years=Array.from(new Set(state.tournaments.map(t=>new Date(t.date).getFullYear()))).sort((a,b)=>b-a);
  document.getElementById('filterYear').innerHTML='<option value="">Alle Jahre</option>'+years.map(y=>`<option>${y}</option>`).join('');
  document.getElementById('bestCourse').innerHTML='<option value="">-- Platz --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
 }
-function renderAll(){populateFilters();renderSummaryAndChart();renderBirdies();renderRecentList();renderBestOfHole();}
+
+function renderAll(){populateFilters();renderSummaryAndChart();renderTopRounds();renderBirdies();renderRecentList();renderBestOfHole();}
 renderAll();
 </script>
 </body>
