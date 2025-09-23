@@ -8,12 +8,13 @@
 <style>
 body{font-family:'Inter',sans-serif;background:#0f1724;color:#eee;margin:0}
 .container{max-width:1250px;margin:auto;padding:20px}
-h1{margin:0 0 10px;font-size:24px}
-.card{background:rgba(255,255,255,0.03);padding:16px;border-radius:10px;margin-bottom:20px}
-select,input,button{padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:#1b2637;color:#eee;margin:2px}
-button{cursor:pointer}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,0.05);text-align:center}
+h1{margin:0 0 15px;font-size:28px;font-weight:600}
+.card{background:#1b2637;padding:20px;border-radius:12px;margin-bottom:25px;box-shadow:0 0 10px rgba(0,0,0,0.3)}
+label{display:block;margin-top:8px}
+select,input,button{width:100%;padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:#243447;color:#eee;margin-top:4px}
+button{cursor:pointer;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
+th,td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.1);text-align:center}
 a{color:#60a5fa;text-decoration:none}
 </style>
 </head>
@@ -25,8 +26,9 @@ a{color:#60a5fa;text-decoration:none}
 <div class="card">
 <h2>Plätze verwalten</h2>
 <form id="courseForm">
-Name <input id="cName" required>
-Tee-Farbe 
+<label>Name</label>
+<input id="cName" required>
+<label>Tee-Farbe</label>
 <select id="cColor">
 <option value="#ffffff">Weiß</option>
 <option value="#ffff00">Gelb</option>
@@ -34,8 +36,10 @@ Tee-Farbe
 <option value="#ff0000">Rot</option>
 <option value="#00ff00">Grün</option>
 </select>
-Slope <input id="cSlope" type="number" required style="width:80px">
-Course Rating <input id="cCR" type="number" required style="width:80px">
+<label>Slope</label>
+<input id="cSlope" type="number" required>
+<label>Course Rating</label>
+<input id="cCR" type="number" required>
 <button type="button" onclick="showHoleInputs()">Löcher definieren</button>
 <button type="submit">Platz anlegen</button>
 </form>
@@ -46,12 +50,18 @@ Course Rating <input id="cCR" type="number" required style="width:80px">
 <div class="card">
 <h2>Turnier anlegen</h2>
 <form id="tournamentForm">
-Datum <input type="date" id="tDate" required>
-Name <input id="tName" required>
-Club <input id="tClub" required>
-Platz <select id="tCourse"></select>
-HandicapIndex <input type="number" id="tHcp" style="width:80px">
-Spielform <select id="tFormat"><option>Stroke</option><option>Stableford</option></select>
+<label>Datum</label>
+<input type="date" id="tDate" required>
+<label>Name</label>
+<input id="tName" required>
+<label>Club</label>
+<input id="tClub" required>
+<label>Platz</label>
+<select id="tCourse"></select>
+<label>HandicapIndex</label>
+<input type="number" id="tHcp">
+<label>Spielform</label>
+<select id="tFormat"><option>Stroke</option><option>Stableford</option></select>
 <button type="submit">Turnier anlegen</button>
 </form>
 <div id="holeEntry"></div>
@@ -59,11 +69,12 @@ Spielform <select id="tFormat"><option>Stroke</option><option>Stableford</option
 </div>
 
 <script>
-const STORAGE_KEY='golf_dash_full3';
+const STORAGE_KEY='golf_dash_full4';
 let state={courses:[],tournaments:[]};
 if(localStorage.getItem(STORAGE_KEY))state=JSON.parse(localStorage.getItem(STORAGE_KEY));
 function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
 function uid(p='id'){return p+Math.random().toString(36).slice(2,9)}
+
 function showHoleInputs(){
  let html='<table><tr><th>Loch</th><th>Par</th><th>HCP</th></tr>';
  for(let i=1;i<=18;i++){
@@ -72,6 +83,7 @@ function showHoleInputs(){
  html+='</table>';
  document.getElementById('holesForm').innerHTML=html;
 }
+
 document.getElementById('courseForm').addEventListener('submit',e=>{
  e.preventDefault();
  const holes=[];
@@ -83,14 +95,17 @@ document.getElementById('courseForm').addEventListener('submit',e=>{
  state.courses.push(c);save();renderCourses();populateCourseDropdowns();
  cName.value='';document.getElementById('holesForm').innerHTML='';
 });
+
 function renderCourses(){
  let html='';
  state.courses.forEach(c=>{html+=`<div><strong>${c.name}</strong> (Slope ${c.slope}, CR ${c.courseRating})</div>`});
  document.getElementById('courseList').innerHTML=html;
 }
+
 function populateCourseDropdowns(){
  document.getElementById('tCourse').innerHTML='<option value="">-- Platz --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
 }
+
 document.getElementById('tournamentForm').addEventListener('submit',e=>{
  e.preventDefault();
  const cid=tCourse.value;const c=state.courses.find(x=>x.id===cid);if(!c)return alert('Platz wählen');
@@ -98,6 +113,7 @@ document.getElementById('tournamentForm').addEventListener('submit',e=>{
  holes:c.holes.map(h=>({num:h.num,par:h.par,hcp:h.hcp,strokes:h.par,stroked:false}))};
  state.tournaments.push(t);save();renderHoleEntry(t);
 });
+
 function renderHoleEntry(t){
  const div=document.getElementById('holeEntry');
  let html=`<h3>Löcher für ${t.name}</h3><table><tr><th>Loch</th><th>Par</th><th>HCP</th><th>Strokes</th><th>Streichen</th></tr>`;
@@ -111,12 +127,14 @@ function renderHoleEntry(t){
  html+='</table>';
  div.innerHTML=html;
 }
+
 function updateHole(tid,num,val){
  const t=state.tournaments.find(x=>x.id===tid);const h=t.holes.find(x=>x.num===num);h.strokes=+val;save();
 }
 function toggleStroke(tid,num,checked){
  const t=state.tournaments.find(x=>x.id===tid);const h=t.holes.find(x=>x.num===num);h.stroked=checked;save();
 }
+
 renderCourses();populateCourseDropdowns();
 </script>
 </body>
