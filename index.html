@@ -14,10 +14,12 @@ h2{margin:0 0 10px;font-size:20px}
 .card{background:#1b2637;padding:20px;border-radius:12px;margin-bottom:25px;box-shadow:0 0 10px rgba(0,0,0,0.3)}
 select,input,button{padding:8px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:#243447;color:#eee;margin:4px 0}
 button{cursor:pointer}
-table{width:100%;border-collapse:collapse;font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
 th,td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.1);text-align:center}
-.eagle{background:#4ade80}.birdie{background:#22d3ee}.par{background:#60a5fa}.bogey{background:#facc15}.dbl{background:#f87171}
+.eagle{background:#4ade80}.birdie{background:#22d3ee}.par{background:#60a5fa}.bogey{background:#facc15;color:#000}.dbl{background:#f87171}
 a{color:#60a5fa;text-decoration:none}
+.scorecard td{border:1px solid rgba(255,255,255,0.1)}
+.vorgabe-striche{font-size:10px;color:#cbd5e1}
 </style>
 </head>
 <body>
@@ -49,6 +51,13 @@ a{color:#60a5fa;text-decoration:none}
 <h2>Best Scores pro Loch</h2>
 <select id="bestCourse" onchange="renderBestOfHole()"></select>
 <div id="bestTable"></div>
+</div>
+
+<div class="card">
+<h2>Turnier ansehen</h2>
+<input id="search" placeholder="Turniername suchen..." oninput="filterTournamentList()">
+<select id="tournamentSelect" onchange="renderSelectedTournament()"></select>
+<div id="tournamentDetails"></div>
 </div>
 
 <div class="card">
@@ -137,6 +146,46 @@ function populateFilters(){
  const years=Array.from(new Set(state.tournaments.map(t=>new Date(t.date).getFullYear()))).sort((a,b)=>b-a);
  document.getElementById('filterYear').innerHTML='<option value="">Alle Jahre</option>'+years.map(y=>`<option>${y}</option>`).join('');
  document.getElementById('bestCourse').innerHTML='<option value="">-- Platz --</option>'+state.courses.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+ populateTournamentDropdown();
+}
+
+function populateTournamentDropdown(){
+ const select=document.getElementById('tournamentSelect');
+ select.innerHTML='<option value="">-- Turnier auswählen --</option>'+state.tournaments.map(t=>{
+ const c=state.courses.find(x=>x.id===t.courseId);
+ return `<option value="${t.id}">${fmtDate(t.date)} - ${t.name} (${c?c.name:''})</option>`;
+ }).join('');
+}
+
+function filterTournamentList(){
+ const search=document.getElementById('search').value.toLowerCase();
+ const select=document.getElementById('tournamentSelect');
+ select.innerHTML='<option value="">-- Turnier auswählen --</option>'+state.tournaments.filter(t=>t.name.toLowerCase().includes(search)).map(t=>{
+ const c=state.courses.find(x=>x.id===t.courseId);
+ return `<option value="${t.id}">${fmtDate(t.date)} - ${t.name} (${c?c.name:''})</option>`;
+ }).join('');
+}
+
+function renderSelectedTournament(){
+ const id=document.getElementById('tournamentSelect').value;const t=state.tournaments.find(x=>x.id===id);
+ if(!t){document.getElementById('tournamentDetails').innerHTML='';return}
+ const c=state.courses.find(x=>x.id===t.courseId);
+ let header=`<h3>${t.name}</h3><p>${fmtDate(t.date)} – ${t.club}<br>Platz: ${c?c.name:''}, Tee: <span style="background:${c?c.teeColor:''};padding:2px 6px;border-radius:4px;color:#000">${c?c.teeColor:''}</span><br>Handicap: ${t.handicapIndex||'-'}</p>`;
+ let table='<table class="scorecard"><tr><th>Loch</th><th>Par</th><th>HCP</th><th>Vorgabe</th><th>Score</th></tr>';
+ t.holes.forEach(h=>{
+ const cls=classify(h.par,h.strokes);
+ // kleine Striche für Vorgabe je Punkt
+ const striche='<span class="vorgabe-striche">'+('│'.repeat(Math.min(h.hcp,4)))+'</span>'; 
+ table+=`<tr>
+ <td>${h.num}</td>
+ <td>${h.par}</td>
+ <td>${h.hcp}</td>
+ <td>${striche}</td>
+ <td class="${cls}">${h.strokes}</td>
+ </tr>`;
+ });
+ table+='</table>';
+ document.getElementById('tournamentDetails').innerHTML=header+table;
 }
 
 function renderAll(){populateFilters();renderSummaryAndChart();renderTopRounds();renderBirdies();renderRecentList();renderBestOfHole();}
